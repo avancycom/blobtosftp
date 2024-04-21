@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.9.34723.18
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FileTransfer.FromBlobStorageToSFTP", "FileTransfer.FromBlobStorageToSFTP\FileTransfer.FromBlobStorageToSFTP.csproj", "{9CC46C8A-9C89-47B1-8CF8-D716C25CC3BB}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FileTransfer.Library", "FileTransfer.Library\FileTransfer.Library.csproj", "{B2E93652-3E0C-4AE3-8C37-78DEDB0C1EBA}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{9CC46C8A-9C89-47B1-8CF8-D716C25CC3BB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9CC46C8A-9C89-47B1-8CF8-D716C25CC3BB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9CC46C8A-9C89-47B1-8CF8-D716C25CC3BB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9CC46C8A-9C89-47B1-8CF8-D716C25CC3BB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B2E93652-3E0C-4AE3-8C37-78DEDB0C1EBA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B2E93652-3E0C-4AE3-8C37-78DEDB0C1EBA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B2E93652-3E0C-4AE3-8C37-78DEDB0C1EBA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B2E93652-3E0C-4AE3-8C37-78DEDB0C1EBA}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {0D1540B6-1925-49B5-AB50-F98F317B8F16}
+	EndGlobalSection
+EndGlobal

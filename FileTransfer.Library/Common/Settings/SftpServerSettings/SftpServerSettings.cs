@@ -7,4 +7,5 @@ public sealed class SftpServerSettings
     public string Username { get; init; } = null!;
     public string Password { get; init; } = null!;
     public string Directory { get; init; } = null!;
+    public string FileProtocol { get; init; } = null!;
 };

@@ -3,6 +3,7 @@ using FileTransfer.Library.Application.Commands.BlobStorageCommands.DownloadBlob
 using FileTransfer.Library.Common.Settings.SftpServerSettings;
 using FluentFTP;
 using MediatR;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Renci.SshNet;
 
@@ -12,67 +13,103 @@ internal sealed class TransferFilesFromBlobStorageToSftpCommandHandler : IReques
 {
     private readonly ISender _mediator;
     private readonly IOptions<SftpServerSettings> _sftpServerSettings;
+    private readonly ILogger<TransferFilesFromBlobStorageToSftpCommandHandler> _logger;
 
     public TransferFilesFromBlobStorageToSftpCommandHandler(
         ISender mediator,
-        IOptions<SftpServerSettings> sftpServerSettings)
+        IOptions<SftpServerSettings> sftpServerSettings,
+        ILogger<TransferFilesFromBlobStorageToSftpCommandHandler> logger)
     {
         _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
         _sftpServerSettings = sftpServerSettings ?? throw new ArgumentNullException(nameof(sftpServerSettings));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     public async Task Handle(TransferFilesFromBlobStorageToSftpCommand request, CancellationToken cancellationToken)
     {
-        Dictionary<string, Stream> files = await _mediator.Send(new DownloadBlobsCommand(), cancellationToken);
-
-        switch (_sftpServerSettings.Value.FileProtocol)
+        Dictionary<string, Stream> downloadedFiles = await _mediator.Send(new DownloadBlobsCommand(), cancellationToken);
+     
+        List<string> uploadedFiles = _sftpServerSettings.Value.FileProtocol switch
         {
-            case "sftp":
-                await SftpHandler(files);
-                break;
-            case "ftp":
-                await FtpHandler(files);
-                break;
-        }
+            "sftp" => await SftpHandler(downloadedFiles),
+            "ftp" => await FtpHandler(downloadedFiles),
+            _ => []
+        };
 
-        await _mediator.Send(new DeleteBlobsCommand(files.Keys.ToList()), cancellationToken);
+        await _mediator.Send(new DeleteBlobsCommand(uploadedFiles), cancellationToken);
     }
 
-    private async Task SftpHandler(Dictionary<string, Stream> files)
+    private async Task<List<string>> SftpHandler(Dictionary<string, Stream> files)
     {
-        var connection = new ConnectionInfo(
-           _sftpServerSettings.Value.Host,
-           _sftpServerSettings.Value.Port,
-           _sftpServerSettings.Value.Username,
-           new PasswordAuthenticationMethod(_sftpServerSettings.Value.Username, _sftpServerSettings.Value.Password));
-
-        using SftpClient sftpClient = new(connection);
-        sftpClient.Connect();
-
-        foreach ((string fileName, Stream stream) in files)
+        try
         {
-            sftpClient.UploadFile(stream, $"{_sftpServerSettings.Value.Directory}/{fileName}");
+            var connection = new ConnectionInfo(
+               _sftpServerSettings.Value.Host,
+               _sftpServerSettings.Value.Port,
+               _sftpServerSettings.Value.Username,
+               new PasswordAuthenticationMethod(_sftpServerSettings.Value.Username, _sftpServerSettings.Value.Password));
+
+            using SftpClient sftpClient = new(connection);
+
+            sftpClient.Connect();
+            if (!sftpClient.IsConnected)
+            {
+                _logger.LogError("Failed to establish SFTP connection to '{server}' server.", _sftpServerSettings.Value.Host);
+                return [];
+            }
+
+            List<string> uploadedFiles = new();
+            foreach ((string fileName, Stream stream) in files)
+            {
+                sftpClient.UploadFile(stream, $"{_sftpServerSettings.Value.Directory}/{fileName}");
+                bool wasFileUploaded = sftpClient.Exists($"{_sftpServerSettings.Value.Directory}/{fileName}");
+                if (wasFileUploaded)
+                    uploadedFiles.Add(fileName);
+            }
+
+            sftpClient.Disconnect();
+            return uploadedFiles;
         }
-
-        sftpClient.Disconnect();
-
+        catch (Exception ex)
+        {
+            _logger.LogError(ex.Message);
+            return [];
+        }
     }
 
-    private async Task FtpHandler(Dictionary<string, Stream> files)
+    private async Task<List<string>> FtpHandler(Dictionary<string, Stream> files)
     {
-        using FtpClient ftpClient = new(
-            _sftpServerSettings.Value.Host,
-            _sftpServerSettings.Value.Username,
-            _sftpServerSettings.Value.Password,
-            _sftpServerSettings.Value.Port);
-
-        ftpClient.Connect();
-
-        foreach ((string fileName, Stream stream) in files)
+        try
         {
-            ftpClient.UploadStream(stream, $"{_sftpServerSettings.Value.Directory}/{fileName}", createRemoteDir: true);
-        }
+            using FtpClient ftpClient = new(
+                _sftpServerSettings.Value.Host,
+                _sftpServerSettings.Value.Username,
+                _sftpServerSettings.Value.Password,
+                _sftpServerSettings.Value.Port);
 
-        ftpClient.Disconnect();
+            ftpClient.Connect();
+            if (!ftpClient.IsConnected)
+            {
+                _logger.LogError("Failed to establish FTP connection to '{server}' server.", _sftpServerSettings.Value.Host);
+                return [];
+            }
+
+            List<string> uploadedFiles = new();
+            foreach ((string fileName, Stream stream) in files)
+            {
+                ftpClient.UploadStream(stream, $"{_sftpServerSettings.Value.Directory}/{fileName}", createRemoteDir: true);
+                var wasFileUploaded = ftpClient.FileExists($"{_sftpServerSettings.Value.Directory}/{fileName}");
+                if (wasFileUploaded)
+                    uploadedFiles.Add(fileName);
+            }
+
+            ftpClient.Disconnect();
+            return uploadedFiles;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex.Message);
+            return [];
+        }
     }
 }

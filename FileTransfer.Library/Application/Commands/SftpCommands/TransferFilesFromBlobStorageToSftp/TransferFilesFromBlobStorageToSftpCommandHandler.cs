@@ -28,7 +28,7 @@ internal sealed class TransferFilesFromBlobStorageToSftpCommandHandler : IReques
     public async Task Handle(TransferFilesFromBlobStorageToSftpCommand request, CancellationToken cancellationToken)
     {
         Dictionary<string, Stream> downloadedFiles = await _mediator.Send(new DownloadBlobsCommand(), cancellationToken);
-     
+
         List<string> uploadedFiles = _sftpServerSettings.Value.FileProtocol switch
         {
             "sftp" => await SftpHandler(downloadedFiles),
@@ -62,9 +62,7 @@ internal sealed class TransferFilesFromBlobStorageToSftpCommandHandler : IReques
             foreach ((string fileName, Stream stream) in files)
             {
                 sftpClient.UploadFile(stream, $"{_sftpServerSettings.Value.Directory}/{fileName}");
-                bool wasFileUploaded = sftpClient.Exists($"{_sftpServerSettings.Value.Directory}/{fileName}");
-                if (wasFileUploaded)
-                    uploadedFiles.Add(fileName);
+                uploadedFiles.Add(fileName);
             }
 
             sftpClient.Disconnect();
@@ -98,9 +96,7 @@ internal sealed class TransferFilesFromBlobStorageToSftpCommandHandler : IReques
             foreach ((string fileName, Stream stream) in files)
             {
                 ftpClient.UploadStream(stream, $"{_sftpServerSettings.Value.Directory}/{fileName}", createRemoteDir: true);
-                var wasFileUploaded = ftpClient.FileExists($"{_sftpServerSettings.Value.Directory}/{fileName}");
-                if (wasFileUploaded)
-                    uploadedFiles.Add(fileName);
+                uploadedFiles.Add(fileName);
             }
 
             ftpClient.Disconnect();

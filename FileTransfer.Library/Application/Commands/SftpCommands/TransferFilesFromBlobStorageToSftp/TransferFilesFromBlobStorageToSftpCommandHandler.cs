@@ -1,5 +1,7 @@
 ﻿using FileTransfer.Library.Application.Commands.BlobStorageCommands.DeleteBlobs;
 using FileTransfer.Library.Application.Commands.BlobStorageCommands.DownloadBlobs;
+using FileTransfer.Library.Common.Helpers;
+using FileTransfer.Library.Common.Models;
 using FileTransfer.Library.Common.Settings.SftpServerSettings;
 using FluentFTP;
 using MediatR;
@@ -70,7 +72,8 @@ internal sealed class TransferFilesFromBlobStorageToSftpCommandHandler : IReques
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex.Message);
+            IpInfo ipInfo = await LocationHelper.GetLocationInfoAsync();
+            _logger.LogError("Exception: {message}. FTP Server IP: {serverIp}, User IP: {userIp}, User Region: {userRegion}", ex.Message, _sftpServerSettings.Value.Host, ipInfo.Ip, ipInfo.Region);
             return [];
         }
     }
@@ -104,7 +107,8 @@ internal sealed class TransferFilesFromBlobStorageToSftpCommandHandler : IReques
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex.Message);
+            IpInfo ipInfo = await LocationHelper.GetLocationInfoAsync();
+            _logger.LogError("Exception: {message}. FTP Server IP: {serverIp}, User IP: {userIp}, User Region: {userRegion}", ex.Message, _sftpServerSettings.Value.Host, ipInfo.Ip, ipInfo.Region);
             return [];
         }
     }

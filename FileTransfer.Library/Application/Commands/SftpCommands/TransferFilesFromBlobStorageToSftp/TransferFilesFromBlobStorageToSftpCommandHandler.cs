@@ -74,7 +74,7 @@ internal sealed class TransferFilesFromBlobStorageToSftpCommandHandler : IReques
         {
             IpInfo ipInfo = await LocationHelper.GetLocationInfoAsync();
             _logger.LogError("Exception: {message}. FTP Server IP: {serverIp}, User IP: {userIp}, User Region: {userRegion}", ex.Message, _sftpServerSettings.Value.Host, ipInfo.Ip, ipInfo.Region);
-            return [];
+            throw;
         }
     }
 
@@ -109,7 +109,7 @@ internal sealed class TransferFilesFromBlobStorageToSftpCommandHandler : IReques
         {
             IpInfo ipInfo = await LocationHelper.GetLocationInfoAsync();
             _logger.LogError("Exception: {message}. FTP Server IP: {serverIp}, User IP: {userIp}, User Region: {userRegion}", ex.Message, _sftpServerSettings.Value.Host, ipInfo.Ip, ipInfo.Region);
-            return [];
+            throw;
         }
     }
 }
